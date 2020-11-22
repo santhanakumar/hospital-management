@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Grid from "@material-ui/core/Grid";
 import TextField from "@material-ui/core/TextField";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
@@ -9,6 +10,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import { KeyboardDatePicker } from "@material-ui/pickers";
 
 import InputLabel from "./common/InputLabel";
+import dayjs from "dayjs";
 
 const useStyles = makeStyles((theme) => ({
   form: {
@@ -20,8 +22,92 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function PatientDetails() {
+const salutations = [
+  {
+    label: "Mr.",
+    value: 1,
+  },
+  {
+    label: "Mrs.",
+    value: 2,
+  },
+  {
+    label: "Ms.",
+    value: 3,
+  },
+];
+
+const genderSalutationMap = {
+  male: [1],
+  female: [2, 3],
+};
+
+const PatientDetails = ({
+  patientInfo,
+  setPatientInfo
+}) => {
   const classes = useStyles();
+  const {
+    salutation,
+    name,
+    gender,
+    dob,
+    age,
+    ageType,
+    appointmentDate,
+    phoneNo,
+    addressLine1,
+    addressLine2,
+    city,
+    state,
+    zipcode,
+    country,
+  } = patientInfo;
+  useEffect(() => {
+    const mapedSalutationArr = genderSalutationMap[gender];
+    if (mapedSalutationArr && !mapedSalutationArr.includes(salutation)) {
+      setPatientInfo({
+        ...patientInfo,
+        salutation: mapedSalutationArr[0],
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gender]);
+  useEffect(() => {
+    if (dob && dob.isValid()) {
+      const today = dayjs();
+      const monthDiff = today.diff(dob, 'M');
+      let newAge;
+      let newAgeType;
+      if (monthDiff > 12) {
+        const yrDiff = today.diff(dob, 'y');
+        newAge = yrDiff;
+        newAgeType = 'yrs';
+      } else {
+        newAge = monthDiff;
+        newAgeType = 'months';
+      }
+      setPatientInfo({
+        ...patientInfo,
+        age: newAge,
+        ageType: newAgeType
+      });
+    }
+  }, [dob]);
+  const renderLabel = (date) => {
+    if (date && date.isValid()) {
+      return date.format("DD MMM YYYY");
+    } else {
+      return "";
+    }
+  };
+  const getInputHandler = (inputName) => (event) => {
+    setPatientInfo({
+      ...patientInfo,
+      [inputName]: event.target.value,
+    });
+  };
+  console.log(patientInfo);
   return (
     <Box className={classes.form}>
       <Grid container spacing={2}>
@@ -33,14 +119,29 @@ export default function PatientDetails() {
             <Grid item xs={10}>
               <Box display="flex">
                 <Box className={classes.rightMargin}>
-                  <TextField required select variant="outlined">
-                    <MenuItem value={10}>Mr.</MenuItem>
-                    <MenuItem value={20}>Mrs.</MenuItem>
-                    <MenuItem value={30}>Ms.</MenuItem>
+                  <TextField
+                    required
+                    select
+                    variant="outlined"
+                    value={salutation}
+                    onChange={getInputHandler("salutation")}
+                  >
+                    <MenuItem value="">Please Select</MenuItem>
+                    {salutations.map(({ value, label }) => (
+                      <MenuItem key={value} value={value}>
+                        {label}
+                      </MenuItem>
+                    ))}
                   </TextField>
                 </Box>
                 <Box flexGrow={1}>
-                  <TextField fullWidth required variant="outlined" />
+                  <TextField
+                    fullWidth
+                    required
+                    variant="outlined"
+                    value={name}
+                    onChange={getInputHandler("name")}
+                  />
                 </Box>
               </Box>
             </Grid>
@@ -52,7 +153,11 @@ export default function PatientDetails() {
               <InputLabel>Gender</InputLabel>
             </Grid>
             <Grid item xs={10}>
-              <RadioGroup row>
+              <RadioGroup
+                row
+                value={gender}
+                onChange={getInputHandler("gender")}
+              >
                 <FormControlLabel
                   value="male"
                   control={<Radio />}
@@ -76,10 +181,15 @@ export default function PatientDetails() {
               <KeyboardDatePicker
                 fullWidth
                 disableToolbar
+                disableFuture
                 variant="inline"
                 inputVariant="outlined"
-                defaultValue="2017-05-24"
                 format="DD MMM YYYY"
+                labelFunc={renderLabel}
+                value={dob}
+                onChange={(date) =>
+                  getInputHandler("dob")({ target: { value: date } })
+                }
               />
             </Grid>
           </Grid>
@@ -92,12 +202,25 @@ export default function PatientDetails() {
             <Grid item xs={10}>
               <Box display="flex">
                 <Box className={classes.rightMargin}>
-                  <TextField fullWidth required variant="outlined" />
+                  <TextField
+                    fullWidth
+                    required
+                    variant="outlined"
+                    value={age}
+                    onChange={getInputHandler("age")}
+                  />
                 </Box>
                 <Box flexGrow={1}>
-                  <TextField required fullWidth select variant="outlined">
-                    <MenuItem value={10}>Years</MenuItem>
-                    <MenuItem value={20}>Month</MenuItem>
+                  <TextField
+                    required
+                    fullWidth
+                    select
+                    variant="outlined"
+                    value={ageType}
+                    onChange={getInputHandler("ageType")}
+                  >
+                    <MenuItem value="yrs">Years</MenuItem>
+                    <MenuItem value="months">Month</MenuItem>
                   </TextField>
                 </Box>
               </Box>
@@ -113,10 +236,17 @@ export default function PatientDetails() {
               <KeyboardDatePicker
                 fullWidth
                 disableToolbar
+                disableFuture
                 variant="inline"
                 inputVariant="outlined"
-                defaultValue="2017-05-24"
                 format="DD MMM YYYY"
+                labelFunc={renderLabel}
+                value={appointmentDate}
+                onChange={(date) =>
+                  getInputHandler("appointmentDate")({
+                    target: { value: date },
+                  })
+                }
               />
             </Grid>
           </Grid>
@@ -127,7 +257,13 @@ export default function PatientDetails() {
               <InputLabel>Phone No</InputLabel>
             </Grid>
             <Grid item xs={10}>
-              <TextField required fullWidth variant="outlined" />
+              <TextField
+                required
+                fullWidth
+                variant="outlined"
+                value={phoneNo}
+                onChange={getInputHandler("phoneNo")}
+              />
             </Grid>
           </Grid>
         </Grid>
@@ -142,6 +278,8 @@ export default function PatientDetails() {
                 fullWidth
                 variant="outlined"
                 placeholder="Street Address"
+                value={addressLine1}
+                onChange={getInputHandler("addressLine1")}
               />
             </Grid>
           </Grid>
@@ -155,6 +293,8 @@ export default function PatientDetails() {
                 fullWidth
                 variant="outlined"
                 placeholder="Street Address 2"
+                value={addressLine2}
+                onChange={getInputHandler("addressLine2")}
               />
             </Grid>
           </Grid>
@@ -168,6 +308,8 @@ export default function PatientDetails() {
                 fullWidth
                 variant="outlined"
                 placeholder="City"
+                value={city}
+                onChange={getInputHandler("city")}
               />
             </Grid>
           </Grid>
@@ -180,6 +322,8 @@ export default function PatientDetails() {
                 fullWidth
                 variant="outlined"
                 placeholder="State / Province"
+                value={state}
+                onChange={getInputHandler("state")}
               />
             </Grid>
           </Grid>
@@ -193,6 +337,8 @@ export default function PatientDetails() {
                 fullWidth
                 variant="outlined"
                 placeholder="Postal / ZipCode"
+                value={zipcode}
+                onChange={getInputHandler("zipcode")}
               />
             </Grid>
           </Grid>
@@ -200,7 +346,14 @@ export default function PatientDetails() {
         <Grid item xs={12} sm={6}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <TextField required fullWidth select variant="outlined">
+              <TextField
+                required
+                fullWidth
+                select
+                variant="outlined"
+                value={country}
+                onChange={getInputHandler("country")}
+              >
                 <MenuItem value={10}>Ten</MenuItem>
                 <MenuItem value={20}>Twenty</MenuItem>
                 <MenuItem value={30}>Thirty</MenuItem>
@@ -212,3 +365,5 @@ export default function PatientDetails() {
     </Box>
   );
 }
+
+export default PatientDetails;

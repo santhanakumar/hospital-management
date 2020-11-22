@@ -43,12 +43,19 @@ const useStyles = makeStyles((theme) => ({
 
 const scanList = [
   {
-    label: "CT Brain",
     id: 1,
+    label: "CT Brain",
+    price: 200
   },
   {
-    label: "MRI Brain",
     id: 2,
+    label: "MRI Brain",
+    price: 170
+  },
+  {
+    id: 3,
+    label: "Glucose Fasting",
+    price: 100
   },
 ];
 
@@ -96,14 +103,18 @@ export default function PatientDetails() {
               <TableCell align="center">Scan Amount</TableCell>
               <TableCell align="center">Discount</TableCell>
               <TableCell align="center">Total Amount</TableCell>
+              <TableCell align="center">Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            <TableCell align="center">Sno</TableCell>
-            <TableCell align="center">Scan Name</TableCell>
-            <TableCell align="center">Scan Amount</TableCell>
-            <TableCell align="center">Discount</TableCell>
-            <TableCell align="center">Total Amount</TableCell>
+            <TableRow>
+              <TableCell align="center">Sno</TableCell>
+              <TableCell align="center">Scan Name</TableCell>
+              <TableCell align="center">Scan Amount</TableCell>
+              <TableCell align="center">Discount</TableCell>
+              <TableCell align="center">Total Amount</TableCell>
+              <TableCell align="center">Total Amount</TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </TableContainer>
