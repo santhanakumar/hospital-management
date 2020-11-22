@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { withStyles, makeStyles } from "@material-ui/core/styles";
+import { makeStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import Grid from "@material-ui/core/Grid";
@@ -7,7 +7,6 @@ import Box from "@material-ui/core/Box";
 import TextField from "@material-ui/core/TextField";
 import Table from "@material-ui/core/Table";
 import TableBody from "@material-ui/core/TableBody";
-import MdTableCell from "@material-ui/core/TableCell";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
@@ -16,19 +15,8 @@ import IconButton from "@material-ui/core/IconButton";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { v4 as uuidv4 } from "uuid";
 
+import TableCell from "./common/TableCell";
 import InputLabel from "./common/InputLabel";
-
-const TableCell = withStyles((theme) => ({
-  head: {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.common.white,
-    border: `1px solid ${theme.palette.common.black}`,
-  },
-  body: {
-    fontSize: 14,
-    border: `1px solid ${theme.palette.common.black}`,
-  },
-}))(MdTableCell);
 
 const useStyles = makeStyles((theme) => ({
   box: {
@@ -46,8 +34,8 @@ const useStyles = makeStyles((theme) => ({
     padding: 0,
   },
   scanPrice: {
-    minWidth: 100
-  }
+    minWidth: 100,
+  },
 }));
 
 const scanList = [
@@ -151,7 +139,10 @@ export default function PatientDetails() {
               )}
             />
             <InputLabel className={classes.rightMargin}>Scan Amount</InputLabel>
-            <Typography color="error" className={`${classes.rightMargin} ${classes.scanPrice}`}>
+            <Typography
+              color="error"
+              className={`${classes.rightMargin} ${classes.scanPrice}`}
+            >
               {scanType && Object.keys(scanType).length ? scanType.price : "--"}
             </Typography>
             <InputLabel className={classes.rightMargin}>Discount</InputLabel>
@@ -178,24 +169,24 @@ export default function PatientDetails() {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell align="center">Sno</TableCell>
-              <TableCell align="center">Scan Name</TableCell>
-              <TableCell align="center">Scan Amount</TableCell>
-              <TableCell align="center">Discount</TableCell>
-              <TableCell align="center">Total Amount</TableCell>
-              <TableCell align="center">Action</TableCell>
+              <TableCell>Sno</TableCell>
+              <TableCell>Scan Name</TableCell>
+              <TableCell>Scan Amount</TableCell>
+              <TableCell>Discount</TableCell>
+              <TableCell>Total Amount</TableCell>
+              <TableCell>Action</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {scanDetails.map(
               ({ id, name, amount, scanDiscount, total }, index) => (
                 <TableRow key={id}>
-                  <TableCell align="center">{index + 1}</TableCell>
-                  <TableCell align="center">{name}</TableCell>
-                  <TableCell align="center">{amount}</TableCell>
-                  <TableCell align="center">{scanDiscount}</TableCell>
-                  <TableCell align="center">{total}</TableCell>
-                  <TableCell align="center">
+                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{name}</TableCell>
+                  <TableCell>{amount}</TableCell>
+                  <TableCell>{scanDiscount}</TableCell>
+                  <TableCell>{total}</TableCell>
+                  <TableCell>
                     <IconButton
                       size="small"
                       onClick={() => deleteScanDetail(id)}

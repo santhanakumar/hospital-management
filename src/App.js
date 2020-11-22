@@ -7,6 +7,7 @@ import { makeStyles } from '@material-ui/core/styles';
 
 import PatientAndBillingDetails from "./containers/PatientBillingDetails";
 import Appointments from "./containers/Appointments";
+import AppointmentDetails from "./containers/AppointmentDetails";
 
 const theme = createMuiTheme({
   overrides: {
@@ -36,8 +37,11 @@ export default function App() {
               <Route path="/" exact>
                 <PatientAndBillingDetails />
               </Route>
-              <Route path="/Appointments">
+              <Route path="/Appointments" exact>
                 <Appointments />
+              </Route>
+              <Route path="/Appointments/:id">
+                <AppointmentDetails />
               </Route>
             </Switch>
           </Router>
