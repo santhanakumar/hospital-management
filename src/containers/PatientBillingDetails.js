@@ -3,6 +3,8 @@ import { makeStyles } from "@material-ui/core/styles";
 
 import Divider from "@material-ui/core/Divider";
 import Paper from "@material-ui/core/Paper";
+import Box from "@material-ui/core/Box";
+import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 
 import Header from "../components/common/Header";
@@ -25,6 +27,10 @@ const useStyles = makeStyles((theme) => ({
       padding: theme.spacing(3),
     },
   },
+  box: {
+    marginTop: theme.spacing(1.5),
+    marginBottom: theme.spacing(1.5),
+  },
 }));
 
 const PatientAndBillingDetails = () => {
@@ -45,6 +51,9 @@ const PatientAndBillingDetails = () => {
     zipcode: "",
     country: "",
   });
+  const canSave = !Object.keys(patientInfo).some(
+    (key) => patientInfo[key] === "" || patientInfo[key] === null
+  );
   return (
     <>
       <Header />
@@ -64,6 +73,21 @@ const PatientAndBillingDetails = () => {
           </Typography>
           <Divider />
           <MedicalScanDetails />
+
+          <Box className={classes.box} display="flex" justifyContent="center">
+            <Button color="primary" variant="outlined" disabled={!canSave}>
+              Save
+            </Button>
+          </Box>
+          <Box className={classes.box} display="flex">
+            <Typography
+              variant="caption"
+              gutterBottom
+              color="error"
+            >
+              * All fields are mandatory
+            </Typography>
+          </Box>
         </Paper>
       </main>
     </>

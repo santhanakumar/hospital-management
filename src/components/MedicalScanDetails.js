@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { withStyles, makeStyles } from "@material-ui/core/styles";
+import Typography from "@material-ui/core/Typography";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import Grid from "@material-ui/core/Grid";
 import Box from "@material-ui/core/Box";
@@ -10,6 +12,10 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Button from "@material-ui/core/Button";
+import IconButton from "@material-ui/core/IconButton";
+import DeleteIcon from "@material-ui/icons/Delete";
+import { v4 as uuidv4 } from "uuid";
+
 import InputLabel from "./common/InputLabel";
 
 const TableCell = withStyles((theme) => ({
@@ -39,28 +45,84 @@ const useStyles = makeStyles((theme) => ({
   autoCompleteInput: {
     padding: 0,
   },
+  scanPrice: {
+    minWidth: 100
+  }
 }));
 
 const scanList = [
   {
     id: 1,
     label: "CT Brain",
-    price: 200
+    price: 600,
+    maxDiscount: {
+      isPercent: false,
+      discount: 100,
+    },
   },
   {
     id: 2,
     label: "MRI Brain",
-    price: 170
+    price: 1000,
+    maxDiscount: {
+      isPercent: false,
+      discount: 300,
+    },
   },
   {
     id: 3,
     label: "Glucose Fasting",
-    price: 100
+    price: 100,
+    maxDiscount: {
+      isPercent: true,
+      discount: 10,
+    },
   },
 ];
 
 export default function PatientDetails() {
+  const [scanDetails, setScanDetails] = useState([]);
+  const [scanType, setScanType] = useState({});
+  const [discount, setDiscount] = useState(0);
+
   const classes = useStyles();
+  const saveScanDetails = () => {
+    if (scanType) {
+      const id = uuidv4();
+      const name = scanType.label;
+      const amount = scanType.price;
+      let scanDiscount = 0;
+      if (discount) {
+        let maxDiscount = scanType.maxDiscount.discount;
+        if (scanType.maxDiscount.isPercent) {
+          maxDiscount = amount * (maxDiscount / 100);
+        }
+        if (discount <= maxDiscount) {
+          scanDiscount = discount;
+        } else {
+          alert("Discount entered is more than Maximum discounted price!");
+          return;
+        }
+      }
+      const total = amount - discount;
+      setScanDetails([
+        ...scanDetails,
+        {
+          id,
+          name,
+          amount,
+          scanDiscount,
+          total,
+        },
+      ]);
+      setDiscount(0);
+      setScanType({});
+    }
+  };
+  const deleteScanDetail = (deleteId) => {
+    setScanDetails(scanDetails.filter(({ id }) => id !== deleteId));
+  };
+  console.log(scanType);
   return (
     <Box className={classes.box}>
       <Grid container spacing={2} className={classes.formContainer}>
@@ -69,9 +131,14 @@ export default function PatientDetails() {
             <InputLabel className={classes.rightMargin}>Scan List</InputLabel>
             <Autocomplete
               options={scanList}
-              getOptionLabel={(option) => option.label}
               style={{ width: 300 }}
               className={classes.rightMargin}
+              value={scanType}
+              getOptionLabel={({ label }) => label || ""}
+              getOptionSelected={({ id: optionId }, { id }) => optionId === id}
+              onChange={(event, newValue) => {
+                setScanType(newValue);
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -84,10 +151,23 @@ export default function PatientDetails() {
               )}
             />
             <InputLabel className={classes.rightMargin}>Scan Amount</InputLabel>
-            <div className={classes.rightMargin}>320</div>
+            <Typography color="error" className={`${classes.rightMargin} ${classes.scanPrice}`}>
+              {scanType && Object.keys(scanType).length ? scanType.price : "--"}
+            </Typography>
             <InputLabel className={classes.rightMargin}>Discount</InputLabel>
-            <TextField className={classes.rightMargin} variant="outlined" />
-            <Button color="primary" variant="outlined">
+            <TextField
+              type="number"
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+              className={classes.rightMargin}
+              variant="outlined"
+            />
+            <Button
+              onClick={saveScanDetails}
+              disabled={!scanType}
+              color="primary"
+              variant="outlined"
+            >
               Add
             </Button>
           </Box>
@@ -107,22 +187,28 @@ export default function PatientDetails() {
             </TableRow>
           </TableHead>
           <TableBody>
-            <TableRow>
-              <TableCell align="center">Sno</TableCell>
-              <TableCell align="center">Scan Name</TableCell>
-              <TableCell align="center">Scan Amount</TableCell>
-              <TableCell align="center">Discount</TableCell>
-              <TableCell align="center">Total Amount</TableCell>
-              <TableCell align="center">Total Amount</TableCell>
-            </TableRow>
+            {scanDetails.map(
+              ({ id, name, amount, scanDiscount, total }, index) => (
+                <TableRow key={id}>
+                  <TableCell align="center">{index + 1}</TableCell>
+                  <TableCell align="center">{name}</TableCell>
+                  <TableCell align="center">{amount}</TableCell>
+                  <TableCell align="center">{scanDiscount}</TableCell>
+                  <TableCell align="center">{total}</TableCell>
+                  <TableCell align="center">
+                    <IconButton
+                      size="small"
+                      onClick={() => deleteScanDetail(id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              )
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-      <Box className={classes.box} display="flex" justifyContent="center">
-        <Button color="primary" variant="outlined">
-          Save
-        </Button>
-      </Box>
     </Box>
   );
 }

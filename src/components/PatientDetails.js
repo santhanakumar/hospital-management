@@ -9,6 +9,7 @@ import Box from "@material-ui/core/Box";
 import { makeStyles } from "@material-ui/core/styles";
 import { KeyboardDatePicker } from "@material-ui/pickers";
 
+import countries from "../utils/countries";
 import InputLabel from "./common/InputLabel";
 import dayjs from "dayjs";
 
@@ -42,10 +43,7 @@ const genderSalutationMap = {
   female: [2, 3],
 };
 
-const PatientDetails = ({
-  patientInfo,
-  setPatientInfo
-}) => {
+const PatientDetails = ({ patientInfo, setPatientInfo }) => {
   const classes = useStyles();
   const {
     salutation,
@@ -71,28 +69,29 @@ const PatientDetails = ({
         salutation: mapedSalutationArr[0],
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gender]);
   useEffect(() => {
     if (dob && dob.isValid()) {
       const today = dayjs();
-      const monthDiff = today.diff(dob, 'M');
+      const monthDiff = today.diff(dob, "M");
       let newAge;
       let newAgeType;
       if (monthDiff > 12) {
-        const yrDiff = today.diff(dob, 'y');
+        const yrDiff = today.diff(dob, "y");
         newAge = yrDiff;
-        newAgeType = 'yrs';
+        newAgeType = "yrs";
       } else {
         newAge = monthDiff;
-        newAgeType = 'months';
+        newAgeType = "months";
       }
       setPatientInfo({
         ...patientInfo,
         age: newAge,
-        ageType: newAgeType
+        ageType: newAgeType,
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dob]);
   const renderLabel = (date) => {
     if (date && date.isValid()) {
@@ -107,7 +106,6 @@ const PatientDetails = ({
       [inputName]: event.target.value,
     });
   };
-  console.log(patientInfo);
   return (
     <Box className={classes.form}>
       <Grid container spacing={2}>
@@ -182,6 +180,7 @@ const PatientDetails = ({
                 fullWidth
                 disableToolbar
                 disableFuture
+                autoOk
                 variant="inline"
                 inputVariant="outlined"
                 format="DD MMM YYYY"
@@ -237,6 +236,7 @@ const PatientDetails = ({
                 fullWidth
                 disableToolbar
                 disableFuture
+                autoOk
                 variant="inline"
                 inputVariant="outlined"
                 format="DD MMM YYYY"
@@ -354,9 +354,12 @@ const PatientDetails = ({
                 value={country}
                 onChange={getInputHandler("country")}
               >
-                <MenuItem value={10}>Ten</MenuItem>
-                <MenuItem value={20}>Twenty</MenuItem>
-                <MenuItem value={30}>Thirty</MenuItem>
+                <MenuItem value="">Please Select</MenuItem>
+                {countries.map(({ code, name }) => (
+                  <MenuItem key={code} value={code}>
+                    {name}
+                  </MenuItem>
+                ))}
               </TextField>
             </Grid>
           </Grid>
@@ -364,6 +367,6 @@ const PatientDetails = ({
       </Grid>
     </Box>
   );
-}
+};
 
 export default PatientDetails;
