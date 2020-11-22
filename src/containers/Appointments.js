@@ -9,12 +9,13 @@ import TableBody from "@material-ui/core/TableBody";
 import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
+import { Link } from "react-router-dom";
 
 import TableCell from "../components/common/TableCell";
 import Header from "../components/common/Header";
 
 import appointments from "../utils/data/appointments";
-import { Link } from "react-router-dom";
+import { getBalance } from "../utils/helper";
 
 const useStyles = makeStyles((theme) => ({
   layout: {
@@ -43,12 +44,6 @@ const useStyles = makeStyles((theme) => ({
   },
   appBarSpacer: theme.mixins.toolbar,
 }));
-
-const getBalance = (totalAmount, payments) => {
-  const paid = payments.reduce((total, current) => total + current.amount, 0);
-  return totalAmount - paid;
-}
-
 
 const Appointments = () => {
   const classes = useStyles();
@@ -82,7 +77,7 @@ const Appointments = () => {
                     age,
                     gender,
                     appointmentDate,
-                    totalAmount,
+                    total,
                     payments,
                   }) => (
                     <TableRow key={id}>
@@ -90,7 +85,7 @@ const Appointments = () => {
                       <TableCell>{name}</TableCell>
                       <TableCell>{`${age} - ${gender}`}</TableCell>
                       <TableCell>{appointmentDate}</TableCell>
-                      <TableCell>{getBalance(totalAmount, payments)} INR</TableCell>
+                      <TableCell>{getBalance(total, payments)} INR</TableCell>
                       <TableCell>
                         <Link to={`/Appointments/${id}`}>Click to Pay</Link>
                       </TableCell>

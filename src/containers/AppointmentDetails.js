@@ -15,19 +15,19 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Button from "@material-ui/core/Button";
+import { useParams } from "react-router-dom";
+import { KeyboardDatePicker } from "@material-ui/pickers";
 
 import PersonIcon from "@material-ui/icons/Person";
 import CreditCardIcon from "@material-ui/icons/CreditCard";
 import LockIcon from "@material-ui/icons/Lock";
 
-import { KeyboardDatePicker } from "@material-ui/pickers";
-
 import TableCell from "../components/common/TableCell";
 import Header from "../components/common/Header";
+import InputLabel from "../components/common/InputLabel";
 
 import appointments from "../utils/data/appointments";
-import { useParams } from "react-router-dom";
-import InputLabel from "../components/common/InputLabel";
+import { getBalance, getPaid, ucFirst  } from "../utils/helper";
 
 const useStyles = makeStyles((theme) => ({
   layout: {
@@ -66,14 +66,6 @@ const useStyles = makeStyles((theme) => ({
     minWidth: 100
   }
 }));
-
-const ucFirst = (string) => string.charAt(0).toUpperCase() + string.slice(1);
-const getPaid = (payments) =>
-  payments.reduce((total, current) => total + current.amount, 0);
-const getBalance = (totalAmount, payments) => {
-  const paid = payments.reduce((total, current) => total + current.amount, 0);
-  return totalAmount - paid;
-};
 
 const AppointmentDetails = () => {
   const classes = useStyles();
