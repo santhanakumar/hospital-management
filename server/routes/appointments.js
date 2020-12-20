@@ -133,4 +133,52 @@ const postAppointments = {
   },
 };
 
-module.exports = [appointments, putAppointments, postAppointments];
+const filterAppointments = {
+  method: "POST",
+  path: "/appointments/filters",
+  handler: async (request) => {
+    const { fromDate, toDate, status, term } = request.payload || {};
+    let filters = [];
+    if (fromDate || toDate) {
+      filters.push({
+        appointmentDate: {
+          ...(fromDate && { $gte: dayjs(fromDate).valueOf() }),
+          ...(toDate && { $lte: dayjs(toDate).valueOf() }),
+        },
+      });
+    }
+    if (status) {
+      filters.push({
+        status,
+      });
+    }
+    if (term) {
+      const regex = new RegExp(term, "i");
+      filters.push({
+        $or: [
+          { name: { $regex: regex } },
+          { gender: { $regex: regex } },
+          { phoneNo: { $regex: regex } },
+          { addressLine1: { $regex: regex } },
+          { addressLine2: { $regex: regex } },
+          { city: { $regex: regex } },
+          { state: { $regex: regex } },
+          { zipcode: { $regex: regex } },
+          { country: { $regex: regex } },
+        ],
+      });
+    }
+    const filterQuery =
+      filters.length > 1 ? { $and: [...filters] } : filters[0];
+
+    const appointments = await db.models.Appointments.find(filterQuery);
+    return appointments;
+  },
+};
+
+module.exports = [
+  appointments,
+  putAppointments,
+  postAppointments,
+  filterAppointments,
+];

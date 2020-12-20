@@ -12,13 +12,13 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import { Link } from "react-router-dom";
-
 import TableCell from "../components/common/TableCell";
 import Header from "../components/common/Header";
 
 import { getBalance } from "../utils/helper";
 import { API_URL } from "../config";
 import dayjs from "dayjs";
+import AppointmentFilters from "../components/AppointmentFilters";
 
 const useStyles = makeStyles((theme) => ({
   layout: {
@@ -45,11 +45,23 @@ const useStyles = makeStyles((theme) => ({
     height: "100vh",
     overflow: "auto",
   },
+  statusBox: {
+    minWidth: 210,
+  },
+  rightMargin: {
+    marginRight: theme.spacing(1),
+  },
   appBarSpacer: theme.mixins.toolbar,
 }));
 
 const Appointments = () => {
   const [appointments, setAppointments] = useState([]);
+  const [filters, setFilters] = useState({
+    fromDate: null,
+    toDate: null,
+    status: "",
+    term: "",
+  });
   const classes = useStyles();
   useEffect(() => {
     (async () => {
@@ -57,6 +69,19 @@ const Appointments = () => {
       setAppointments(response.data);
     })();
   }, []);
+
+  const handleChangeFilter = (key, value) => {
+    setFilters({
+      ...filters,
+      [key]: value,
+    });
+  };
+
+  const onSearchClick = async () => {
+    const response = await axios.post(`${API_URL}/appointments/filters`, filters);
+    setAppointments(response.data);
+  };
+
   console.log(appointments);
   return (
     <>
@@ -68,6 +93,11 @@ const Appointments = () => {
             Appointments
           </Typography>
           <Divider />
+          <AppointmentFilters
+            filters={filters}
+            handleChangeFilter={handleChangeFilter}
+            onSearchClick={onSearchClick}
+          />
           <TableContainer>
             <Table>
               <TableHead>
