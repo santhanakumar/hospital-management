@@ -7,6 +7,7 @@ const init = async () => {
   const server = Hapi.server({
     port: 3001,
     host: "localhost",
+    routes: { cors: true },
   });
   server.route({
     method: "GET",

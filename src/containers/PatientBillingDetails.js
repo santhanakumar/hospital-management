@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { useHistory } from "react-router-dom";
 import clsx from "clsx";
+import dayjs from "dayjs";
+import axios from "axios";
 import { makeStyles } from "@material-ui/core/styles";
 
 import Divider from "@material-ui/core/Divider";
@@ -11,6 +14,8 @@ import Typography from "@material-ui/core/Typography";
 import Header from "../components/common/Header";
 import PatientDetails from "../components/PatientDetails";
 import MedicalScanDetails from "../components/MedicalScanDetails";
+import { API_URL, APPOINTMENT_STATUS } from "../config";
+import { getBillingAmount } from "../utils/helper";
 
 const useStyles = makeStyles((theme) => ({
   layout: {
@@ -37,11 +42,12 @@ const useStyles = makeStyles((theme) => ({
     height: "100vh",
     overflow: "auto",
   },
-  appBarSpacer: theme.mixins.toolbar
+  appBarSpacer: theme.mixins.toolbar,
 }));
 
 const PatientAndBillingDetails = () => {
   const classes = useStyles();
+  const history = useHistory();
   const [patientInfo, setPatientInfo] = useState({
     salutation: "",
     name: "",
@@ -58,9 +64,37 @@ const PatientAndBillingDetails = () => {
     zipcode: "",
     country: "",
   });
-  const canSave = !Object.keys(patientInfo).some(
-    (key) => patientInfo[key] === "" || patientInfo[key] === null
-  );
+  const [scanDetails, setScanDetails] = useState([]);
+
+  const saveAppointment = async () => {
+    const [amount, discount, total] = getBillingAmount(scanDetails);
+    const data = {
+      ...patientInfo,
+      appointmentDate: dayjs(patientInfo.appointmentDate).startOf("day"),
+      amount,
+      discount,
+      total,
+      status: APPOINTMENT_STATUS.NOT_YET_BILLED,
+      billingInfo: [
+        ...scanDetails.map(({ id, name, ...scanInfo }) => scanInfo),
+      ],
+    };
+    try {
+      const response = await axios.put(`${API_URL}/appointments`, data);
+      if (response?.data?.status === "success") {
+        history.push("/Appointments");
+      } else {
+        alert(response?.data?.message?.join(', '));
+      }
+    } catch (ex) {
+      console.log(ex);
+    }
+  };
+
+  const canSave =
+    !Object.keys(patientInfo).some(
+      (key) => patientInfo[key] === "" || patientInfo[key] === null
+    ) && scanDetails.length > 0;
   return (
     <>
       <Header />
@@ -80,20 +114,24 @@ const PatientAndBillingDetails = () => {
             Medical Scan Details
           </Typography>
           <Divider />
-          <MedicalScanDetails />
+          <MedicalScanDetails
+            scanDetails={scanDetails}
+            setScanDetails={setScanDetails}
+          />
 
           <Box className={classes.box} display="flex" justifyContent="center">
-            <Button color="primary" variant="outlined" disabled={!canSave}>
+            <Button
+              color="primary"
+              variant="outlined"
+              disabled={!canSave}
+              onClick={saveAppointment}
+            >
               Save
             </Button>
           </Box>
           <Box className={classes.box} display="flex">
-            <Typography
-              variant="caption"
-              gutterBottom
-              color="error"
-            >
-              * All fields are mandatory
+            <Typography variant="caption" gutterBottom color="error">
+              * All fields are mandatory & Enter atleast one Scan details
             </Typography>
           </Box>
         </Paper>

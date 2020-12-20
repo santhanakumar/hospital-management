@@ -9,4 +9,17 @@ const settings = {
   },
 };
 
-module.exports = [settings];
+const settingsSearch = {
+  method: "GET",
+  path: "/settings/getBillingMaster/search/{searchText}",
+  handler: async (req) => {
+    console.log(req.params.searchText);
+    const regex = new RegExp(req.params.searchText, "i");
+    const instances = await db.models.MedicalBillingMaster.find({
+      name: { $regex: regex },
+    }).join();
+    return instances;
+  },
+};
+
+module.exports = [settings, settingsSearch];

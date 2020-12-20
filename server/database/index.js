@@ -8,30 +8,47 @@ ko.connect({
 ko.models({
   Discount: {
     isPercent: ko.Boolean,
-    discount: ko.Number
+    discount: ko.Number,
   },
   Payment: {
     date: ko.Date,
     amount: ko.Number,
-    type: ko.Number
+    type: ko.Number,
   },
   MedicalBillingMaster: {
     name: ko.String[50],
     price: ko.Number,
     maxDiscount: ko.models.Discount,
-    slotsPerDay: ko.Number // 0 for infinity
+    slotsPerDay: ko.Number, // 0 for infinity
+  },
+  ScanInfo: {
+    billing: ko.models.MedicalBillingMaster,
+    amount: ko.Number,
+    scanDiscount: ko.Number,
+    total: ko.Number,
   },
   Appointments: {
+    salutation: ko.Number,
     name: ko.String[256],
-    age: ko.Number,
-    ageType: ko.String[1],
     gender: ko.String[10],
+    dob: ko.Date,
+    age: ko.Number,
+    ageType: ko.String[10],
     appointmentDate: ko.Date,
+    phoneNo: ko.String[256],
+    addressLine1: ko.String[256],
+    addressLine2: ko.String[256],
+    city: ko.String[256],
+    state: ko.String[256],
+    zipcode: ko.String[256],
+    country: ko.String[256],
+    status: ko.String[20],
     amount: ko.Number,
     discount: ko.Number,
     total: ko.Number,
-    payments: [ko.models.Payment]
-  }
-})
+    billingInfo: [ko.models.ScanInfo],
+    payments: [ko.models.Payment],
+  },
+});
 
 module.exports = ko;

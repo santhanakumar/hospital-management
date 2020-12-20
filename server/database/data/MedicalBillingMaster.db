@@ -1,2 +1,3 @@
-{"_id":"SYm5CRljXci8iiYC","name":"MRI Brain","price":1000,"maxDiscount":"xIGtEzrsLie7hoSX","slotsPerDay":6}
-{"_id":"bDeqtTxDFNx6EVp4","name":"CT Brain","price":600,"maxDiscount":"DgbjWMg4AkhnxfxR","slotsPerDay":7}
+{"_id":"I4ucSYKN31DwdyWu","name":"Glucose Fasting","price":100,"maxDiscount":"uBWUSz9FMfOoGTtq","slotsPerDay":0}
+{"_id":"I7wuKACkHPORUvv7","name":"MRI Brain","price":1000,"maxDiscount":"vKVaxLckrmNJA312","slotsPerDay":6}
+{"_id":"uYcUAxM7mHFrQ7TQ","name":"CT Brain","price":600,"maxDiscount":"vHnhl7wDXXY3IyLz","slotsPerDay":7}

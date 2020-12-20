@@ -62,14 +62,20 @@ const PatientDetails = ({ patientInfo, setPatientInfo }) => {
     country,
   } = patientInfo;
   useEffect(() => {
-    const mapedSalutationArr = genderSalutationMap[gender];
-    if (mapedSalutationArr && !mapedSalutationArr.includes(salutation)) {
+    if (salutation !== "") {
+      let newGender;
+      Object.keys(genderSalutationMap).forEach((key) => {
+        if (genderSalutationMap[key].includes(salutation)) {
+          newGender = key;
+        }
+      });
       setPatientInfo({
         ...patientInfo,
-        salutation: mapedSalutationArr[0],
+        gender: newGender || gender,
       });
     }
-  }, [gender, patientInfo, salutation, setPatientInfo]);
+  }, [salutation]);
+
   useEffect(() => {
     if (dob && dob.isValid()) {
       const today = dayjs();
@@ -90,7 +96,7 @@ const PatientDetails = ({ patientInfo, setPatientInfo }) => {
         ageType: newAgeType,
       });
     }
-  }, [dob, patientInfo, setPatientInfo]);
+  }, [dob]);
   const renderLabel = (date) => {
     if (date && date.isValid()) {
       return date.format("DD MMM YYYY");

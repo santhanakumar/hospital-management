@@ -33,7 +33,7 @@ const setup = async () => {
     }).save();
   }
 
-  const glucoseFasting = db.models.MedicalBillingMaster.findOne({
+  const glucoseFasting = await db.models.MedicalBillingMaster.findOne({
     name: "Glucose Fasting",
   });
   if (!glucoseFasting) {

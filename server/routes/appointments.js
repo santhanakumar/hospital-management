@@ -1,3 +1,4 @@
+const dayjs = require("dayjs");
 const db = require("../database/index");
 
 const appointments = {
@@ -9,40 +10,104 @@ const appointments = {
   },
 };
 
+const savePayments = async (payments) => {
+  const paymentIds = [];
+  if (!payments) {
+    return paymentIds;
+  }
+  await Promise.all(
+    payments.map(async ({ id: paymentId, date, amount, type }) => {
+      let payment;
+      if (paymentId) {
+        payment = await db.models.Payment.findById(paymentId);
+      } else {
+        payment = await db.models.Payment.create({});
+      }
+      payment.date = date;
+      payment.amount = amount;
+      payment.type = type;
+      await payment.save();
+      paymentIds.push(payment._id);
+    })
+  );
+
+  return paymentIds;
+};
+
+const saveBillingInfo = async (billingInfo) => {
+  const scanInfoIds = [];
+  if (!billingInfo) {
+    return scanInfoIds;
+  }
+  await Promise.all(
+    billingInfo.map(
+      async ({ id: scanId, billingId, amount, scanDiscount, total }) => {
+        let scanInfo;
+        if (scanId) {
+          scanInfo = await db.models.ScanInfo.findById(scanId);
+        } else {
+          scanInfo = await db.models.ScanInfo.create({});
+        }
+        scanInfo.billing = billingId;
+        scanInfo.amount = amount;
+        scanInfo.scanDiscount = scanDiscount;
+        scanInfo.total = total;
+        await scanInfo.save();
+        scanInfoIds.push(scanInfo._id);
+      }
+    )
+  );
+  return scanInfoIds;
+};
+
 const putAppointments = {
   method: "PUT",
   path: "/appointments",
   handler: async (request) => {
-    const {
-      name,
-      age,
-      ageType,
-      gender,
-      appointmentDate,
-      amount,
-      discount,
-      total,
-    } = request.payload;
-    const paymentIds = [];
-    request.payload.payments.forEach(async ({ date, amount, type }) => {
-      const payment = await db.models.Payment.create({
-        date,
-        amount,
-        type,
-      }).save();
-      paymentIds.push(payment._id);
+    const { id, payments, billingInfo, ...appointmentInfo } = request.payload;
+    const billingWithRestriction = await db.models.MedicalBillingMaster.find({
+      slotsPerDay: { $gt: 0 },
     });
-    await db.models.Appointments.create({
-      name,
-      age,
-      ageType,
-      gender,
-      appointmentDate,
-      amount,
-      discount,
-      total,
-      payments: paymentIds,
-    }).save();
+    const errors = [];
+    await Promise.all(
+      billingWithRestriction.map(async (billing) => {
+        const findAppointmentByDate = await db.models.Appointments.find({
+          appointmentDate: dayjs(appointmentInfo.appointmentDate).valueOf(),
+        }).join();
+        const currentBillingCount = billingInfo.filter(
+          ({ billingId }) => billingId === billing._id
+        ).length;
+        const billedCount = findAppointmentByDate.reduce(
+          (total, appointment) => {
+            return (
+              total +
+              appointment.billingInfo.filter(
+                (bill) => bill.billing === billing._id
+              ).length
+            );
+          },
+          0
+        );
+        if (currentBillingCount + billedCount > billing.slotsPerDay) {
+          errors.push({
+            message: `In a day only ${billing.slotsPerDay} ${billing.name} billings are allowed.`,
+          });
+        }
+      })
+    );
+    if (errors.length > 0) {
+      return {
+        status: "error",
+        message: errors,
+      };
+    }
+    const appointment = await db.models.Appointments.create({});
+    Object.keys(appointmentInfo).forEach((key) => {
+      appointment[key] = appointmentInfo[key];
+    });
+    appointment.billingInfo = await saveBillingInfo(billingInfo);
+    appointment.payments = await savePayments(payments);
+    await appointment.save();
     return {
       status: "success",
       message: "Appointment saved successfully",
@@ -54,48 +119,12 @@ const postAppointments = {
   method: "POST",
   path: "/appointments",
   handler: async (request) => {
-    const {
-      id,
-      name,
-      age,
-      ageType,
-      gender,
-      appointmentDate,
-      amount,
-      discount,
-      total,
-    } = request.payload;
-    const paymentIds = [];
-    request.payload.payments.forEach(
-      async ({ id: paymentId, date, amount, type }) => {
-        let payment;
-        if (paymentId) {
-          payment = await db.models.Payment.findById(paymentId);
-        } else {
-          payment = await db.models.Payment.create();
-        }
-        payment.date = date;
-        payment.amount = amount;
-        payment.type = type;
-        await payment.save();
-        paymentIds.push(payment._id);
-      }
-    );
-    let appointment;
-    if (id) {
-      appointment = await db.models.Appointments.findById(id);
-    } else {
-      appointment = await db.models.Appointments.create({});
-    }
-    appointment.name = name;
-    appointment.age = age;
-    appointment.ageType = ageType;
-    appointment.gender = gender;
-    appointment.appointmentDate = appointmentDate;
-    appointment.amount = amount;
-    appointment.discount = discount;
-    appointment.total = total;
-    appointment.payments = paymentIds;
+    const { id, payments, ...appointmentInfo } = request.payload;
+    const appointment = await db.models.Appointments.findById(id);
+    Object.keys(appointmentInfo).forEach((key) => {
+      appointment[key] = appointmentInfo[key];
+    });
+    appointment.payments = savePayments(payments);
     await appointment.save();
     return {
       status: "success",

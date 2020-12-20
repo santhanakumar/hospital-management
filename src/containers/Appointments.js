@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { makeStyles } from "@material-ui/core/styles";
+import axios from "axios";
 
 import Divider from "@material-ui/core/Divider";
 import Paper from "@material-ui/core/Paper";
@@ -14,8 +16,9 @@ import { Link } from "react-router-dom";
 import TableCell from "../components/common/TableCell";
 import Header from "../components/common/Header";
 
-import appointments from "../utils/data/appointments";
 import { getBalance } from "../utils/helper";
+import { API_URL } from "../config";
+import dayjs from "dayjs";
 
 const useStyles = makeStyles((theme) => ({
   layout: {
@@ -46,7 +49,15 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const Appointments = () => {
+  const [appointments, setAppointments] = useState([]);
   const classes = useStyles();
+  useEffect(() => {
+    (async () => {
+      const response = await axios.get(`${API_URL}/appointments`);
+      setAppointments(response.data);
+    })();
+  }, []);
+  console.log(appointments);
   return (
     <>
       <Header />
@@ -71,26 +82,36 @@ const Appointments = () => {
               </TableHead>
               <TableBody>
                 {appointments.map(
-                  ({
-                    id,
-                    name,
-                    age,
-                    gender,
-                    appointmentDate,
-                    total,
-                    payments,
-                  }) => (
-                    <TableRow key={id}>
-                      <TableCell>{id}</TableCell>
+                  (
+                    {
+                      _id,
+                      name,
+                      age,
+                      gender,
+                      appointmentDate,
+                      total,
+                      payments,
+                    },
+                    index
+                  ) => (
+                    <TableRow key={_id}>
+                      <TableCell>{index + 1}</TableCell>
                       <TableCell>{name}</TableCell>
                       <TableCell>{`${age} - ${gender}`}</TableCell>
-                      <TableCell>{appointmentDate}</TableCell>
+                      <TableCell>
+                        {dayjs(appointmentDate).format("DD-MMM-YYYY")}
+                      </TableCell>
                       <TableCell>{getBalance(total, payments)} INR</TableCell>
                       <TableCell>
-                        <Link to={`/Appointments/${id}`}>Click to Pay</Link>
+                        <Link to={`/Appointments/${_id}`}>Click to Pay</Link>
                       </TableCell>
                     </TableRow>
                   )
+                )}
+                {appointments.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7}>No Records</TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>

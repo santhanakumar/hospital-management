@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { makeStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 import Autocomplete from "@material-ui/lab/Autocomplete";
@@ -14,9 +14,11 @@ import Button from "@material-ui/core/Button";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteIcon from "@material-ui/icons/Delete";
 import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
 
 import TableCell from "./common/TableCell";
 import InputLabel from "./common/InputLabel";
+import { API_URL } from "../config";
 
 const useStyles = makeStyles((theme) => ({
   box: {
@@ -38,47 +40,39 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-const scanList = [
-  {
-    id: 1,
-    label: "CT Brain",
-    price: 600,
-    maxDiscount: {
-      isPercent: false,
-      discount: 100,
-    },
-  },
-  {
-    id: 2,
-    label: "MRI Brain",
-    price: 1000,
-    maxDiscount: {
-      isPercent: false,
-      discount: 300,
-    },
-  },
-  {
-    id: 3,
-    label: "Glucose Fasting",
-    price: 100,
-    maxDiscount: {
-      isPercent: true,
-      discount: 10,
-    },
-  },
-];
-
-export default function PatientDetails() {
-  const [scanDetails, setScanDetails] = useState([]);
+export default function PatientDetails({ scanDetails, setScanDetails }) {
+  const [autoCompleteInput, setAutoCompleteInput] = useState("");
+  const [scanList, setScanList] = useState([]);
   const [scanType, setScanType] = useState({});
   const [discount, setDiscount] = useState(0);
 
   const classes = useStyles();
+
+  useEffect(() => {
+    let active = true;
+    if (autoCompleteInput) {
+      (async () => {
+        const result = await axios.get(
+          `${API_URL}/settings/getBillingMaster/search/${autoCompleteInput}`
+        );
+        if (active) {
+          setScanList(result.data);
+        }
+      })();
+    } else {
+      setScanList([]);
+    }
+    return () => {
+      active = false;
+    };
+  }, [autoCompleteInput]);
+
   const saveScanDetails = () => {
     if (scanType) {
       const id = uuidv4();
-      const name = scanType.label;
+      const name = scanType.name;
       const amount = scanType.price;
+      const billingId = scanType._id;
       let scanDiscount = 0;
       if (discount) {
         let maxDiscount = scanType.maxDiscount.discount;
@@ -97,6 +91,7 @@ export default function PatientDetails() {
         ...scanDetails,
         {
           id,
+          billingId,
           name,
           amount,
           scanDiscount,
@@ -122,10 +117,13 @@ export default function PatientDetails() {
               style={{ width: 300 }}
               className={classes.rightMargin}
               value={scanType}
-              getOptionLabel={({ label }) => label || ""}
+              getOptionLabel={({ name }) => name || ""}
               getOptionSelected={({ id: optionId }, { id }) => optionId === id}
               onChange={(event, newValue) => {
                 setScanType(newValue);
+              }}
+              onInputChange={(event, newInputValue) => {
+                setAutoCompleteInput(newInputValue);
               }}
               renderInput={(params) => (
                 <TextField
@@ -196,6 +194,11 @@ export default function PatientDetails() {
                   </TableCell>
                 </TableRow>
               )
+            )}
+            {scanDetails.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6}>No Records</TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
