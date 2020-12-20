@@ -13,7 +13,8 @@ ko.models({
   Payment: {
     date: ko.Date,
     amount: ko.Number,
-    type: ko.Number,
+    type: ko.String[5],
+    transactionNumber: ko.String,
   },
   MedicalBillingMaster: {
     name: ko.String[50],
@@ -28,6 +29,7 @@ ko.models({
     total: ko.Number,
   },
   Appointments: {
+    lastUpdated: ko.Date,
     salutation: ko.Number,
     name: ko.String[256],
     gender: ko.String[10],

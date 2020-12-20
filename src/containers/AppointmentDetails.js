@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { makeStyles } from "@material-ui/core/styles";
+import axios from "axios";
 
 import Grid from "@material-ui/core/Grid";
-import InputAdornment from "@material-ui/core/InputAdornment";
 import TextField from "@material-ui/core/TextField";
 import MenuItem from "@material-ui/core/MenuItem";
 import Divider from "@material-ui/core/Divider";
@@ -15,19 +16,15 @@ import TableContainer from "@material-ui/core/TableContainer";
 import TableHead from "@material-ui/core/TableHead";
 import TableRow from "@material-ui/core/TableRow";
 import Button from "@material-ui/core/Button";
-import { useParams } from "react-router-dom";
-import { KeyboardDatePicker } from "@material-ui/pickers";
-
-import PersonIcon from "@material-ui/icons/Person";
-import CreditCardIcon from "@material-ui/icons/CreditCard";
-import LockIcon from "@material-ui/icons/Lock";
+import { useHistory, useParams } from "react-router-dom";
 
 import TableCell from "../components/common/TableCell";
 import Header from "../components/common/Header";
 import InputLabel from "../components/common/InputLabel";
 
-import appointments from "../utils/data/appointments";
-import { getBalance, getPaid, ucFirst  } from "../utils/helper";
+import { getBalance, getPaid, ucFirst } from "../utils/helper";
+import { API_URL, PAYMENT_TYPE } from "../config";
+import dayjs from "dayjs";
 
 const useStyles = makeStyles((theme) => ({
   layout: {
@@ -63,48 +60,82 @@ const useStyles = makeStyles((theme) => ({
     marginRight: theme.spacing(1),
   },
   scanAmount: {
-    minWidth: 100
-  }
+    minWidth: 100,
+  },
 }));
 
 const AppointmentDetails = () => {
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentType, setPaymentType] = useState(PAYMENT_TYPE.CASH);
+  const [transactionNumber, setTransactionNumber] = useState("");
+  const [appointment, setAppointment] = useState({});
   const classes = useStyles();
   const { id } = useParams();
-  const appointment = appointments.find((item) => item.id === +id);
+  const history = useHistory();
+
+  useEffect(() => {
+    (async () => {
+      const response = await axios.get(`${API_URL}/appointments/${id}`);
+      if (response?.data?._id) {
+        setAppointment(response.data);
+      } else {
+        history.push("/Appointments");
+      }
+    })();
+  }, [id]);
 
   const {
-    ID,
     name,
     age,
-    ageType,
-    gender,
+    ageType = "",
+    gender = "",
     amount,
     discount,
     total,
-    payments,
+    payments = [],
   } = appointment;
+
+  const balance = getBalance(total, payments);
 
   const billingInfo = [
     { id: 1, label: "Patient Name", value: name },
-    { id: 2, label: "Patient ID", value: ID },
     {
       id: 3,
       label: "Age/Gender",
-      value: `${age}${ageType}/${ucFirst(gender)}`,
+      value: `${age} ${ucFirst(ageType)} / ${ucFirst(gender)}`,
     },
-    { id: 4, label: "Total Amount", value: `${total} INR` },
-    { id: 5, label: "Discount", value: discount },
-    { id: 6, label: "Paid Amount", value: getPaid(payments) },
-    { id: 7, label: "Balance", value: getBalance(amount, payments) },
+    { id: 4, label: "Total Amount", value: `${amount} INR` },
+    { id: 5, label: "Discount", value: `${discount} INR` },
+    { id: 6, label: "Paid Amount", value: `${getPaid(payments)} INR` },
+    { id: 7, label: "Balance", value: `${balance} INR` },
   ];
 
-  const renderLabel = (date) => {
-    if (date && date.isValid()) {
-      return date.format("DD MMM YYYY");
+  const onSaveClick = async () => {
+    const response = await axios.post(
+      `${API_URL}/appointments/addPayment/${id}`,
+      {
+        amount: parseInt(paymentAmount),
+        type: paymentType,
+        transactionNumber:
+          paymentType === PAYMENT_TYPE.CARD ? transactionNumber : "",
+      }
+    );
+    if (response?.data?.status === "success") {
+      const res = await axios.get(`${API_URL}/appointments/${id}`);
+      setAppointment(res?.data);
+      setPaymentAmount("");
+      setPaymentType(PAYMENT_TYPE.CASH);
+      setTransactionNumber("");
     } else {
-      return "";
+      alert(response?.data?.message);
     }
   };
+
+  const canSave =
+    balance <= amount &&
+    paymentAmount &&
+    paymentType &&
+    (paymentType === PAYMENT_TYPE.CASH || transactionNumber);
 
   return (
     <>
@@ -149,14 +180,21 @@ const AppointmentDetails = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {appointment.payments.map(({ id, date, amount, type }) => (
-                      <TableRow key={id}>
-                        <TableCell>{id}</TableCell>
-                        <TableCell>{date}</TableCell>
+                    {payments.map(({ _id, date, amount, type }, index) => (
+                      <TableRow key={_id}>
+                        <TableCell>{index + 1}</TableCell>
+                        <TableCell>
+                          {dayjs(date).format("DD-MMM-YYYY")}
+                        </TableCell>
                         <TableCell>{amount}</TableCell>
                         <TableCell>{type}</TableCell>
                       </TableRow>
                     ))}
+                    {payments.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4}>No Records</TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -169,86 +207,49 @@ const AppointmentDetails = () => {
                   <InputLabel>Payable Amount: </InputLabel>
                 </Grid>
                 <Grid item xs={9}>
-                  <TextField fullWidth required variant="outlined" />
+                  <TextField
+                    fullWidth
+                    required
+                    variant="outlined"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                  />
                 </Grid>
                 <Grid item xs={3}>
                   <InputLabel>Payable Mode: </InputLabel>
                 </Grid>
                 <Grid item xs={9}>
-                  <TextField required select variant="outlined">
-                    <MenuItem value="CARD">CARD</MenuItem>
-                    <MenuItem value="CASH">CASH</MenuItem>
+                  <TextField
+                    required
+                    select
+                    variant="outlined"
+                    value={paymentType}
+                    onChange={(e) => setPaymentType(e.target.value)}
+                  >
+                    {[PAYMENT_TYPE.CARD, PAYMENT_TYPE.CASH].map((value) => (
+                      <MenuItem value={value}>{value}</MenuItem>
+                    ))}
                   </TextField>
                 </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    required
-                    placeholder="CardHolder Name"
-                    variant="outlined"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <PersonIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    required
-                    placeholder="Card Number"
-                    variant="outlined"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <CreditCardIcon />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <Box display="flex" alignItems="center">
-                    <InputLabel className={clsx(classes.rightMargin, classes.scanAmount)}>
-                      Scan Amount
-                    </InputLabel>
-                    <KeyboardDatePicker
-                      disableToolbar
-                      disableFuture
-                      autoOk
-                      variant="inline"
-                      inputVariant="outlined"
-                      format="DD MMM YYYY"
-                      labelFunc={renderLabel}
-                      className={classes.rightMargin}
-                      // value={dob}
-                      // onChange={(date) =>
-                      //   getInputHandler("dob")({ target: { value: date } })
-                      // }
-                    />
+                {paymentType === "CARD" && (
+                  <Grid item xs={12}>
                     <TextField
+                      fullWidth
                       required
-                      placeholder="CVC"
+                      placeholder="Transaction Number"
                       variant="outlined"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LockIcon />
-                          </InputAdornment>
-                        ),
-                      }}
+                      value={transactionNumber}
+                      onChange={(e) => setTransactionNumber(e.target.value)}
                     />
-                  </Box>
-                  <Box
-                    className={classes.box}
-                    display="flex"
-                  >
+                  </Grid>
+                )}
+                <Grid item xs={12}>
+                  <Box className={classes.box} display="flex">
                     <Button
                       color="primary"
                       variant="outlined"
+                      onClick={onSaveClick}
+                      disabled={!canSave}
                     >
                       Save
                     </Button>

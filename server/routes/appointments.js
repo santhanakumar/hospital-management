@@ -1,12 +1,34 @@
 const dayjs = require("dayjs");
 const db = require("../database/index");
 
+const APPOINTMENT_STATUS = {
+  NOT_YET_BILLED: "Not yet Billed",
+  DUE_BILLED: "Due Billed",
+  FULLY_BILLED: "Fully Billed",
+};
+
+const getBalance = (totalAmount, payments) => {
+  const paid = payments.reduce((total, current) => total + current.amount, 0);
+  return totalAmount - paid;
+};
+
 const appointments = {
   method: "GET",
   path: "/appointments",
   handler: async () => {
     const instances = await db.models.Appointments.find({}).join();
     return instances;
+  },
+};
+
+const getAppointment = {
+  method: "GET",
+  path: "/appointments/{id}",
+  handler: async (req) => {
+    const instance = await db.models.Appointments.findById(
+      req.params.id
+    ).join();
+    return instance;
   },
 };
 
@@ -107,6 +129,7 @@ const putAppointments = {
     });
     appointment.billingInfo = await saveBillingInfo(billingInfo);
     appointment.payments = await savePayments(payments);
+    appointment.lastUpdated = new Date();
     await appointment.save();
     return {
       status: "success",
@@ -125,6 +148,7 @@ const postAppointments = {
       appointment[key] = appointmentInfo[key];
     });
     appointment.payments = savePayments(payments);
+    appointment.lastUpdated = new Date();
     await appointment.save();
     return {
       status: "success",
@@ -171,14 +195,53 @@ const filterAppointments = {
     const filterQuery =
       filters.length > 1 ? { $and: [...filters] } : filters[0];
 
-    const appointments = await db.models.Appointments.find(filterQuery);
+    const appointments = await db.models.Appointments.find(filterQuery).join();
     return appointments;
+  },
+};
+
+const addPayment = {
+  method: "POST",
+  path: "/appointments/addPayment/{id}",
+  handler: async (req) => {
+    const { amount, type, transactionNumber } = req.payload;
+    const appointment = await db.models.Appointments.findById(
+      req.params.id
+    ).join();
+    let status = APPOINTMENT_STATUS.DUE_BILLED;
+    if (appointment.payments.length === 2) {
+      const balance = getBalance(appointment.total, appointment.payments);
+      if (balance !== amount) {
+        return {
+          status: "error",
+          message: `Could not add payment, amount should be ${balance} INR`,
+        };
+      } else {
+        status = APPOINTMENT_STATUS.FULLY_BILLED;
+      }
+    }
+    const payment = await db.models.Payment.create({
+      date: dayjs().startOf("day").toDate(),
+      amount,
+      type,
+      transactionNumber,
+    }).save();
+    appointment.payments.$push(payment._id);
+    appointment.status = status;
+    appointment.lastUpdated = new Date();
+    await appointment.save();
+    return {
+      status: "success",
+      message: "Appointment saved successfully",
+    };
   },
 };
 
 module.exports = [
   appointments,
+  getAppointment,
   putAppointments,
   postAppointments,
   filterAppointments,
+  addPayment,
 ];

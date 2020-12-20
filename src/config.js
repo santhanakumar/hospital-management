@@ -4,3 +4,7 @@ export const APPOINTMENT_STATUS = {
   DUE_BILLED: "Due Billed",
   FULLY_BILLED: "Fully Billed",
 };
+export const PAYMENT_TYPE = {
+  CARD: "CARD",
+  CASH: "CASH",
+};
