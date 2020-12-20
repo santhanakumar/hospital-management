@@ -6,5 +6,5 @@ export const getBalance = (totalAmount, payments) => {
 export const ucFirst = (string) =>
   string.charAt(0).toUpperCase() + string.slice(1);
 
-  export const getPaid = (payments) =>
+export const getPaid = (payments) =>
   payments.reduce((total, current) => total + current.amount, 0);

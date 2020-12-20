@@ -69,8 +69,7 @@ const PatientDetails = ({ patientInfo, setPatientInfo }) => {
         salutation: mapedSalutationArr[0],
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gender]);
+  }, [gender, patientInfo, salutation, setPatientInfo]);
   useEffect(() => {
     if (dob && dob.isValid()) {
       const today = dayjs();
@@ -91,8 +90,7 @@ const PatientDetails = ({ patientInfo, setPatientInfo }) => {
         ageType: newAgeType,
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dob]);
+  }, [dob, patientInfo, setPatientInfo]);
   const renderLabel = (date) => {
     if (date && date.isValid()) {
       return date.format("DD MMM YYYY");
